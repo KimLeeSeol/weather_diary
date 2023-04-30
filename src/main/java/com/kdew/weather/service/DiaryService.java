@@ -4,7 +4,6 @@ package com.kdew.weather.service;
 import com.kdew.weather.WeatherApplication;
 import com.kdew.weather.domain.DateWeather;
 import com.kdew.weather.domain.Diary;
-import com.kdew.weather.error.InvalidDate;
 import com.kdew.weather.repository.DateWeatherRepository;
 import com.kdew.weather.repository.DiaryRepository;
 import lombok.RequiredArgsConstructor;
@@ -55,12 +54,20 @@ public class DiaryService {
     public void createDiary(LocalDate date, String text) {
         logger.info("started to create diary");
 
+        /* 입력한 날짜의 날씨 데이터 입력(과금 우려)
+        String weatherData = getWeatherString();
+        Map<String, Object> parsedWeather = parseWeather(weatherData);*/
+
         // DB에 저장되어있는 날씨 데이터 가져오기
         DateWeather dateWeather = getDateWeather(date);
 
         Diary nowDiary = new Diary(); // db에 저장
         nowDiary.setDateWeather(dateWeather);
         nowDiary.setText(text);
+
+        /*nowDiary.setWeather(parsedWeather.get("main").toString());
+        nowDiary.setIcon(parsedWeather.get("icon").toString());
+        nowDiary.setTemperature((Double) parsedWeather.get("temp"));*/
 
         diaryRepository.save(nowDiary);
         logger.info("end to create diary");
@@ -164,7 +171,11 @@ public class DiaryService {
         Map<String,Object> resultMap = new HashMap<>();
 
         JSONObject mainData = (JSONObject) jsonObject.get("main");
-        resultMap.put("temp", mainData.get("temp"));
+
+        // 온도는 절대 온도라서 변환 필요
+        double ktemp = Double.parseDouble(mainData.get("temp").toString());
+        double temp = Math.floor(ktemp-273.15);
+        resultMap.put("temp", temp);
 
         JSONArray weatherArray = (JSONArray) jsonObject.get("weather");
         JSONObject weatherData = (JSONObject) weatherArray.get(0);
